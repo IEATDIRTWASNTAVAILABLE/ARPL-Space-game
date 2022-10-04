@@ -9,9 +9,6 @@ ArrayList<String> chat=new ArrayList<String>();
 ArrayList<Score> scores=new ArrayList<Score>();
 boolean[] keys=new boolean[65536];
 boolean[] Skeys=new boolean[65536];
-//PVector[] stars1=new PVector[1024];
-//PVector[] stars2=new PVector[512];
-//PVector[] stars3=new PVector[256];
 double g=0.001;
 double dt=1/240.0;
 int myID=-1;
@@ -37,79 +34,64 @@ float mod(float x, float y) {
 }
 void setup() {
   size(1600,900,P2D);
-  colorMode(RGB);
-  //shader = loadShader("frag.glsl");
-  //noLoop();
-  for(int i=0;i<dotCount;i++) {
-    dots[i] = new PVector(random(256),random(256),(floor(random(3))/2.0+1.0)*2.0);
-  }
-  dotsImg = createImage(min((dotCount*3),16384),(dotCount*3)/16384+1,ARGB);
-  print(dotsImg.width+" "+dotsImg.height);
-  dotsImg.loadPixels();
-  for(int i=0;i<dotCount;i++) {
-    dotsImg.pixels[i*3+0] = color(floor(mod(dots[i].x*256*256*256,256)),floor(mod(dots[i].x*256*256,256)),floor(mod(dots[i].x*256,256)),floor(mod(dots[i].x,256)));
-    dotsImg.pixels[i*3+1] = color(floor(mod(dots[i].y*256*256*256,256)),floor(mod(dots[i].y*256*256,256)),floor(mod(dots[i].y*256,256)),floor(mod(dots[i].y,256)));
-    dotsImg.pixels[i*3+2] = color(floor(mod(dots[i].z*256*256*256,256)),floor(mod(dots[i].z*256*256,256)),floor(mod(dots[i].z*256,256)),floor(mod(dots[i].z,256)));
-  }
-  dotsImg.updatePixels();
   String[] config=loadStrings("config.txt");
   String[] adress=split(config[0],":");
   String name=config[1].substring(0, Math.min(config[1].length(), 32));
   me=new Client(this,adress[0],Integer.parseInt(adress[1]));
   if(!me.active()) {
+    print("Server not found");
     System.exit(0);
   }
   ByteBuffer connectData=ByteBuffer.allocate(33);
   connectData.put((byte)1).put(setLength(name,32).getBytes());
   me.write(connectData.array());
-  delay(1000);
-  if(!me.active()) {
-    System.exit(0);
-  }
-  byte[] data=me.readBytes();
-  ByteBuffer dataBuffer=ByteBuffer.wrap(data);
-  int i=0;
-  while(i<data.length) {
-    if(data[i]==0) {
-      myID=dataBuffer.getInt(i+1);
-      selected=myID;
-      followID=myID;
-      break;
-    } else if(data[i]==1) {
-      i+=dataBuffer.getInt(i+1);
+  int t=0;
+  while(t<5000){
+    delay(10);
+    boolean loopBreak=false;
+    if(!me.active()) {
+      print("Disconnected by server");
+      System.exit(0);
     } else {
-      i++;
+      byte[] data=me.readBytes();
+      if(data!=null) {
+      ByteBuffer dataBuffer=ByteBuffer.wrap(data);
+      int i=0;
+      while(i<data.length-1) {
+        if(data[i]==0) {
+          myID=dataBuffer.getInt(i+1);
+          selected=myID;
+          followID=myID;
+          loopBreak=true;
+          break;
+        } else if(data[i]==1) {
+          i+=dataBuffer.getInt(i+1);
+        } else {
+          i++;
+        }
+      }
+      if(loopBreak) { break; }
+      t+=10;
+    }
     }
   }
   if(myID<0) {
+    print("Server did not respond");
     System.exit(0);
   }
   frameRate(60.0);
-  //for(int j=0;j<stars1.length;j++) {
-  //  stars1[j]=new PVector(random(0,2*width),random(0,2*height));
-  //}
-  //for(int j=0;j<stars2.length;j++) {
-  //  stars2[j]=new PVector(random(0,2*width),random(0,2*height));
-  //}
-  //for(int j=0;j<stars3.length;j++) {
-  //  stars3[j]=new PVector(random(0,2*width),random(0,2*height));
-  //}
 }
 void itext(String t, double info, String unit, float textX, float textY) {
   text(t+Math.floor(1000*info)/1000+unit,textX,textY);
 }
 boolean chatting=false;
 double zoom=1.0;
-//byte[] data=new byte[65536];
 void draw() {
-  //int dataLength=me.readBytes(data);
-  //if(dataLength>0) {
-    
   byte[] data=me.readBytes();
   me.clear();
   if(data!=null&&data.length>0&&data[0]==1) {
     ByteBuffer dataBuffer=ByteBuffer.wrap(data);
-    int i=1;
+    int i=5;
     players.clear();
     bodies.clear();
     planets.clear();
@@ -159,7 +141,7 @@ void draw() {
   double centerVelX=0;
   double centerVelY=0;
   double totalMass=0;
-  for(float i=0;i<1.0/60.0;i+=dt) {
+  for(float i=0;i<1.0/max(frameRate,15);i+=dt) {
     for(Body body : bodies) {
       body.updateVelocity(bodies);
       centerPosX+=body.posX*body.mass;
@@ -397,6 +379,21 @@ void draw() {
         fill(0,255,127);
         circle((float)((apoX-posX)*zoom)+width/2,(float)((apoY-posY)*zoom)+height/2,2.5);
       }
+      double shootVel=480d;
+      double t=dist/shootVel;
+      double nrx=0;
+      double nry=0;
+      for(int i=0;i<64;i++) {
+        nrx=rx+vx*t;
+        nry=ry+vy*t;
+        double ndist=Math.sqrt(nrx*nrx+nry*nry);
+        t=ndist/shootVel;
+      }
+      fill(255,255,0);
+      circle(-(float)(nrx*zoom)+width/2,-(float)(nry*zoom)+height/2,2.5);
+      stroke(255,255,0);
+      line(-(float)(rx*zoom)+width/2,-(float)(ry*zoom)+height/2,-(float)(nrx*zoom)+width/2,-(float)(nry*zoom)+height/2);
+      noStroke();
       fill(255,255,255);
       tY=0;
       for(Score score : scores) {
@@ -414,7 +411,7 @@ void draw() {
       line(width/2,height/2,(float)(width/2+Math.cos(myPlayer.angle)*height/6),(float)(height/2+Math.sin(myPlayer.angle)*height/6));
       }
     }
-    byte moveCode=byte(((int(keys['w'])*1+int(keys['a'])*2+int(keys['s'])*4+int(keys['d'])*8+int(keys['h'])*64)*int(!chatting)+int(mousePressed&&(mouseButton==LEFT))*16+int(mousePressed&&(mouseButton==RIGHT))*32));
+    byte moveCode=byte(((int(keys['W'])*1+int(keys['A'])*2+int(keys['S'])*4+int(keys['D'])*8+int(keys['H'])*64+int(keys[SHIFT])*128)*int(!chatting)+int(mousePressed&&(mouseButton==LEFT))*16+int(mousePressed&&(mouseButton==RIGHT))*32));
     ByteBuffer dataSend=ByteBuffer.allocate(14);
     dataSend.put((byte)2).put(moveCode).putInt(selected).putDouble(Math.atan2(mouseY-height/2,mouseX-width/2));
     me.write(dataSend.array());
@@ -428,26 +425,24 @@ void draw() {
   }
   textSize(20);
   fill(255);
-  int y=height-8;
+  int tY=height-8;
   if(chatting) {
-    text("> "+msg+"|",8,y);
+    text("> "+msg+"|",8,tY);
   }
-  y-=24;
+  tY-=24;
   for(String str : chat) {
-    text(str,8,y);
-    y-=24;
+    text(str,8,tY);
+    tY-=24;
   }
+  text(frameRate,width-96,24);
 }
 void mouseWheel(MouseEvent e) {
   int count=e.getCount();
-  zoom=Math.max(zoom*(1.0-count/10.0),0.0001);
+  zoom=Math.max(zoom*(1.0-count/10.0),0.00001d);
 }
 String msg="";
 void keyPressed() {
-  if(key==CODED) {
-    Skeys[keyCode]=true;
-  } else {
-    keys[key]=true;
+    keys[keyCode]=true;
     if(chatting) {
       if(key==ENTER) {
         if(msg.length()>0) {
@@ -457,13 +452,15 @@ void keyPressed() {
           msg="";
         }
         chatting=false;
-      } else if(key==BACKSPACE) {
+      } else if(keyCode==BACKSPACE&&keys[SHIFT]) {
+        msg="";
+      } else if(keyCode==BACKSPACE) {
         msg=msg.substring(0,max(msg.length()-1,0));
-      } else {
+      } else if(key!=CODED){
         msg+=key;
       }
     } else {
-      if(key==TAB) {
+      if(keyCode==TAB) {
         double minDist=-1;
         for(Body body : bodies) {
           double rx=(body.posX-follow.posX)-(mouseX-width/2)/zoom;
@@ -477,9 +474,9 @@ void keyPressed() {
         if(minDist*zoom*zoom>192*192) {
           selected=-1;
         }
-      } else if(key=='r') {
+      } else if(keyCode=='R') {
         followID=myID;
-      } else if(key=='f') {
+      } else if(keyCode=='F') {
         double minDist=-1;
         for(Body body : bodies) {
           double rx=(body.posX-follow.posX)-(mouseX-width/2)/zoom;
@@ -490,16 +487,11 @@ void keyPressed() {
             followID=body.index;
           }
         }
-      } else if(key==ENTER) {
+      } else if(keyCode==ENTER) {
         chatting=true;
       }
     }
-  }
 }
 void keyReleased() {
-  if(key==CODED) {
-    Skeys[keyCode]=false;
-  } else {
-    keys[key]=false;
-  }
+    keys[keyCode]=false;
 }
