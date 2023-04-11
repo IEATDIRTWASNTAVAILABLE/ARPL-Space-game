@@ -300,27 +300,45 @@ void draw() {
       double Ey=((v*v-gm/dist)*ry-(rx*vx+ry*vy)*vy)/gm;
       double E=Math.sqrt(Ex*Ex+Ey*Ey);
       double argP=Math.atan2(Ey,-Ex);
-      double maxTheta=Math.acos(-Math.min(1/E,1));
-      double dTheta=1/180d;
-      double R=sma*(1-E*E)/(1-E*Math.cos(Math.PI-maxTheta));
-      if(E<1&&planet.mass>=10) {
-        double startX=R*Math.cos(Math.PI-maxTheta-argP)+selectedBody.posX-posX;
-        double startY=R*Math.sin(Math.PI-maxTheta-argP)+selectedBody.posY-posY;
-        double dotX=startX;
-        double dotY=startY;
+      double dTheta=Math.PI/180d;
+      double R=sma*(1-E*E)/(1+E);
+      if(E!=1&&planet.mass>=10) {
         stroke(red((color)planet.clr),green((color)planet.clr),blue((color)planet.clr),63);
         if(planet==myPlayer) {
           stroke(0,255,255,127);
         } else if(players.contains(planet)) {
           stroke(255,0,0,127);
         }
-        for(double theta=Math.PI-maxTheta-argP;theta<Math.PI+maxTheta-argP+dTheta;theta+=dTheta) {
-          R=sma*(1-E*E)/(1-E*Math.cos(theta+argP));
-          double Rx=R*Math.cos(theta)+selectedBody.posX-posX;
-          double Ry=R*Math.sin(theta)+selectedBody.posY-posY;
-          line((float)(Rx*zoom)+width/2,(float)(Ry*zoom)+height/2,(float)(dotX*zoom)+width/2,(float)(dotY*zoom)+height/2);
-          dotX=Rx;
-          dotY=Ry;
+        if(E<1) {
+          double startX=R*Math.cos(Math.PI-argP)+selectedBody.posX-posX;
+          double startY=R*Math.sin(Math.PI-argP)+selectedBody.posY-posY;
+          double dotX=startX;
+          double dotY=startY;
+          for(double theta=-Math.PI-argP;theta<Math.PI-argP+dTheta;theta+=dTheta) {
+            R=sma*(1-E*E)/(1-E*Math.cos(theta+argP));
+            double Rx=R*Math.cos(theta)+selectedBody.posX-posX;
+            double Ry=R*Math.sin(theta)+selectedBody.posY-posY;
+            line((float)(Rx*zoom)+width/2,(float)(Ry*zoom)+height/2,(float)(dotX*zoom)+width/2,(float)(dotY*zoom)+height/2);
+            dotX=Rx;
+            dotY=Ry;
+          }
+        } else {
+          //double dotX=0;
+          //double dotY=0;
+          //boolean n=false;
+          //double maxTheta=Math.acos(-Math.min(1/E,1))-Math.PI/16;
+          //for(double theta=Math.PI-argP+dTheta-maxTheta;theta<Math.PI-argP+maxTheta;theta+=dTheta) {
+          //  R=sma*(1-E*E)/(1-E*Math.cos(theta+argP));
+          //  double Rx=R*Math.cos(theta)+selectedBody.posX-posX;
+          //  double Ry=R*Math.sin(theta)+selectedBody.posY-posY;
+          //  if(n) {
+          //    line((float)(Rx*zoom)+width/2,(float)(Ry*zoom)+height/2,(float)(dotX*zoom)+width/2,(float)(dotY*zoom)+height/2);
+          //  } else {
+          //    n=true;
+          //  }
+          //  dotX=Rx;
+          //  dotY=Ry;
+          //}
         }
       }
       if(planet==follow) {
