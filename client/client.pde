@@ -456,7 +456,7 @@ void draw() {
 }
 void mouseWheel(MouseEvent e) {
   int count=e.getCount();
-  zoom=Math.max(zoom*(1.0-count/10.0),0.00001d);
+  zoom=Math.max(zoom*(1.0-count/10.0),0.00001d/1000000d);
 }
 String msg="";
 void keyPressed() {
