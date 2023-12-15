@@ -12,6 +12,7 @@ Server server;
 ArrayList<Client> disconnectList=new ArrayList<Client>();
 double dt=1.0/240.0;
 double g=0.001;
+//double g=0.000000000066743;
 int num=0;
 String setLength(String text, int len) {
     return String.format("%-" + len + "." + len + "s", text);
@@ -74,7 +75,130 @@ void writeChat(String msg) {
 }
 double scale=1;
 void setup() {
-  server=new Server(this,42069);
+  String[] config=loadStrings("config.txt");
+  String[] configServer=config[0].split(" ");
+  String[] configMissile=config[1].split(" ");
+  String[] configPlayer=config[2].split(" ");
+  int port=Integer.parseInt(configServer[0]);
+  g=Double.parseDouble(configServer[1]);
+  missileRadius=Double.parseDouble(configMissile[0]);
+  missileMass=Double.parseDouble(configMissile[1]);
+  missileThrust=Double.parseDouble(configMissile[2]);
+  missileStartSpeed=Double.parseDouble(configMissile[3]);
+  missileLifetime=Double.parseDouble(configMissile[4]);
+  playerRadius=Double.parseDouble(configPlayer[0]);
+  playerDryMass=Double.parseDouble(configPlayer[1]);
+  playerThrust=Double.parseDouble(configPlayer[2]);
+  ionThrustRatio=Double.parseDouble(configPlayer[3]);
+  playerIsp=Double.parseDouble(configPlayer[4]);
+  playerMaxFuel=Double.parseDouble(configPlayer[5]);
+  server=new Server(this,port);
+  ArrayList<String> bodyNames = new ArrayList<String>();
+  for(int i=3;i<config.length;i++) {
+    String[] str = config[i].split(" ");
+    String op=str[0];
+    double[] val;
+    switch(op) {
+      case "Star":
+        bodyNames.add(str[1]);
+        val = new double[10];
+        for(int j=0;j<val.length;j++) {
+          String num=str[j+2];
+          if(num.endsWith("pi")) {
+            val[j]=Double.parseDouble(num.substring(0,num.length()-2))*Math.PI;
+          } else {
+            val[j]=Double.parseDouble(num);
+          }
+        }
+        addStar(val[0],val[1],val[2],val[3],val[4],val[5],val[6],color((int)val[7],(int)val[8],(int)val[9]));
+        break;
+      case "Planet":
+        bodyNames.add(str[1]);
+        val = new double[10];
+        for(int j=0;j<val.length;j++) {
+          String num=str[j+2];
+          if(num.endsWith("pi")) {
+            val[j]=Double.parseDouble(num.substring(0,num.length()-2))*Math.PI;
+          } else {
+            val[j]=Double.parseDouble(num);
+          }
+        }
+        addPlanet(val[0],val[1],val[2],val[3],val[4],val[5],val[6],color((int)val[7],(int)val[8],(int)val[9]));
+        break;
+      case "orbitTEM":
+        val = new double[5];
+        for(int j=0;j<val.length;j++) {
+          String num=str[j+3];
+          if(num.endsWith("pi")) {
+            val[j]=Double.parseDouble(num.substring(0,num.length()-2))*Math.PI;
+          } else {
+            val[j]=Double.parseDouble(num);
+          }
+        }
+        orbitTEM(bodies.get(bodyNames.indexOf(str[1])),bodies.get(bodyNames.indexOf(str[2])),val[0],val[1],val[2],val[3],val[4]);
+        break;
+      case "orbitSEM":
+        val = new double[5];
+        for(int j=0;j<val.length;j++) {
+          String num=str[j+3];
+          if(num.endsWith("pi")) {
+            val[j]=Double.parseDouble(num.substring(0,num.length()-2))*Math.PI;
+          } else {
+            val[j]=Double.parseDouble(num);
+          }
+        }
+        orbitSEM(bodies.get(bodyNames.indexOf(str[1])),bodies.get(bodyNames.indexOf(str[2])),val[0],val[1],val[2],val[3],val[4]);
+        break;
+      case "orbitPAM":
+        val = new double[5];
+        for(int j=0;j<val.length;j++) {
+          String num=str[j+3];
+          if(num.endsWith("pi")) {
+            val[j]=Double.parseDouble(num.substring(0,num.length()-2))*Math.PI;
+          } else {
+            val[j]=Double.parseDouble(num);
+          }
+        }
+        orbitPAM(bodies.get(bodyNames.indexOf(str[1])),bodies.get(bodyNames.indexOf(str[2])),val[0],val[1],val[2],val[3],val[4]);
+        break;
+      case "orbitPEM":
+        val = new double[5];
+        for(int j=0;j<val.length;j++) {
+          String num=str[j+3];
+          if(num.endsWith("pi")) {
+            val[j]=Double.parseDouble(num.substring(0,num.length()-2))*Math.PI;
+          } else {
+            val[j]=Double.parseDouble(num);
+          }
+        }
+        orbitPEM(bodies.get(bodyNames.indexOf(str[1])),bodies.get(bodyNames.indexOf(str[2])),val[0],val[1],val[2],val[3],val[4]);
+        break;
+      case "orbitAEM":
+        val = new double[5];
+        for(int j=0;j<val.length;j++) {
+          String num=str[j+3];
+          if(num.endsWith("pi")) {
+            val[j]=Double.parseDouble(num.substring(0,num.length()-2))*Math.PI;
+          } else {
+            val[j]=Double.parseDouble(num);
+          }
+        }
+        orbitAEM(bodies.get(bodyNames.indexOf(str[1])),bodies.get(bodyNames.indexOf(str[2])),val[0],val[1],val[2],val[3],val[4]);
+        break;
+      case "orbit":
+        val = new double[1];
+        for(int j=0;j<val.length;j++) {
+          String num=str[j+3];
+          if(num.endsWith("pi")) {
+            val[j]=Double.parseDouble(num.substring(0,num.length()-2))*Math.PI;
+          } else {
+            val[j]=Double.parseDouble(num);
+          }
+        }
+        orbit(bodies.get(bodyNames.indexOf(str[1])),bodies.get(bodyNames.indexOf(str[2])),val[0]);
+        break;
+    }
+  }
   //Body star=addStar(0,0,0,0,200,2000000000000d,-1);
   //Body p1=addPlanet(7500,0,0,0,30,100000000d,-1);
   //orbit(star,p1,1.0);
@@ -93,7 +217,8 @@ void setup() {
   //Body p8=addStar(600,0,0,0,25,100000000d,-1);
   //orbitPAM(star,p8,600,17000,Math.PI*0.8,-Math.PI*0.04,1);
   
-  //Body star=addStar(0,0,0,0,500*scale,500000000000d*scale*scale,-1,color(255,255,127));
+  //current setting
+  //Body star=addStar(0,0,0,0,50*scale,500000000000d*scale*scale,-1,color(31));//color(255,255,127));
   //Body p1=addStar(0,0,0,0,10*scale,3000000d*scale*scale,-1,color(159,127,63));
   //Body p2=addPlanet(0,0,0,0,20*scale,12500000d*scale*scale,-1,color(239,223,191));
   //orbitTEM(star,p1,42,0.3,Math.PI,Math.PI*0.4,-1.0);
@@ -110,18 +235,33 @@ void setup() {
   //orbitTEM(p5,p6,20,0,0,0,1);
   //orbitTEM(p5,p7,40,0,0,0,1);
   //orbitSEM(p7,p8,20,0,0,0,-1);
+  //Body p9=addStar(600,0,0,0,25,100000000d,-1,color(223,239,250));
+  //orbitPAM(star,p9,600,17000,Math.PI*0.8,-Math.PI*0.04,1);
   
-  //Body Earth=addPlanet(0,0,0,0,500,50000000000d,-1,color(191,223,127));
+  //Body Sun=addStar(0,0,0,0,696400000d*scale,1988500000000000000000000000000d*scale*scale,-1,color(255,255,239));
+  //Body Mercury=addStar(0,0,0,0,2439700d*scale,330110000000000000000000d*scale*scale,-1,color(127,95,63));
+  //Body Venus=addStar(0,0,0,0,2439700d*scale,330110000000000000000000d*scale*scale,-1,color(239,231,215));
+  //Body Earth=addPlanet(0,0,0,0,6371000d*scale,5972600000000000000000000d*scale*scale,-1,color(63,95,191));
+  //Body Moon=addStar(0,0,0,0,1737400d*scale,73420000000000000000000d*scale*scale,-1,color(159,159,159));
+  //Body Mars=addStar(0,0,0,0,3389500d*scale,641710000000000000000000d*scale*scale,-1,color(191,95,63));
+  //Body ISS=addPlanet(0,0,0,0,5d,10000000000d,-1,color(191,191,255));
   
-  Body star=addStar(0,0,0,0,2500,200d*2500d*2500d/g,-1,color(255,239,191));
-  Body p1=addPlanet(0,0,0,0,400,40d*400d*400d/g,-1,color(111,159,127));
-  Body p2=addStar(0,0,0,0,100,10d*100d*100d/g,-1,color(95,95,95));
-  Body SS1=addStar(0,0,0,0,2d,1d*2d*2d/g,-1,color(191,191,191));
-  Body p3=addStar(0,0,0,0,250,15d*250d*250d/g,-1,color(191,159,143));
-  orbitSEM(star,p1,30000,0,0,0,-1);
-  orbitSEM(p1,p2,1200,0,0,0,-1);
-  orbitSEM(p1,SS1,p1.radius+50,0,0,0,-1);
-  orbitSEM(star,p3,18000,0.15,0,0,-1);
+  //orbitSEM(Sun,Mercury,57909050000d*scale,0.2056,radians(174.796),radians(29.124),-1);
+  //orbitSEM(Sun,Venus,108208000000d*scale,0.00677,radians(50.115),radians(54.884),-1);
+  //orbitSEM(Sun,Earth,149598261000d*scale,0.0167,radians(358.617),radians(114.20783),-1);
+  //orbitSEM(Earth,Moon,384748000d*scale,0.0549,0,0,-1);
+  //orbitSEM(Sun,Mars,227939366000d*scale,0.0934,radians(19.412),radians(286.5),-1);
+  //orbitSEM(Earth,ISS,6371000d*scale+400000d*scale,0,0,0,-1);
+  
+  //Body star=addStar(0,0,0,0,2500*scale,200d*2500d*2500d/g*scale*scale,-1,color(255,239,191));
+  //Body p1=addPlanet(0,0,0,0,400*scale,40d*400d*400d/g*scale*scale,-1,color(111,159,127));
+  //Body p2=addStar(0,0,0,0,100*scale,10d*100d*100d/g*scale*scale,-1,color(95,95,95));
+  //Body SS1=addStar(0,0,0,0,2d*scale,1d*2d*2d/g*scale*scale,-1,color(191,191,191));
+  //Body p3=addStar(0,0,0,0,250*scale,15d*250d*250d/g*scale*scale,-1,color(191,159,143));
+  //orbitSEM(star,p1,30000*scale,0,0,0,-1);
+  //orbitSEM(p1,p2,1200*scale,0,0,0,-1);
+  //orbitSEM(p1,SS1,p1.radius+40+10*scale,0,0,0,-1);
+  //orbitSEM(star,p3,18000*scale,0.15,0,0,-1);
   
   //Body p1=addPlanet(0,0,0,0,60000,20d*60000d*60000d/g,-1,color(63,191,127));
   frameRate(60.0);

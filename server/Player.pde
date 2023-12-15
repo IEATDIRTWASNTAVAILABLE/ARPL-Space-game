@@ -1,8 +1,9 @@
 double playerRadius=0.5;
 double playerDryMass=50;
-double playerThrust=2500;
+double playerThrust=5000;
+double ionThrustRatio=0.05;
 double playerIsp=360;
-double playerMaxFuel=20;
+double playerMaxFuel=150;
 class Player extends Ship {
   Client id;
   double bulletTime;
@@ -65,8 +66,8 @@ class Player extends Ship {
       velY+=(dirY*((thrustDir&1)-(thrustDir&4)/4)-dirX*((thrustDir&2)/2-(thrustDir&8)/8))*thrust/mass*dt;
       fuel-=((thrustDir&1)+(thrustDir&2)/2+(thrustDir&4)/4+(thrustDir&8)/8)*thrust/playerIsp*dt;
     }
-    velX+=(dirX*((thrustDir&1)-(thrustDir&4)/4)+dirY*((thrustDir&2)/2-(thrustDir&8)/8))*thrust/mass/64*dt;
-    velY+=(dirY*((thrustDir&1)-(thrustDir&4)/4)-dirX*((thrustDir&2)/2-(thrustDir&8)/8))*thrust/mass/64*dt;
+    velX+=(dirX*((thrustDir&1)-(thrustDir&4)/4)+dirY*((thrustDir&2)/2-(thrustDir&8)/8))*thrust*ionThrustRatio/mass*dt;
+    velY+=(dirY*((thrustDir&1)-(thrustDir&4)/4)-dirX*((thrustDir&2)/2-(thrustDir&8)/8))*thrust*ionThrustRatio/mass*dt;
     fuel=Math.max(Math.min(fuel,playerMaxFuel),0d);
     mass+=fuel-prevFuel;
     //if(posX*posX+posY*posY>30000d*30000d) {

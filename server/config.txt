@@ -1,0 +1,22 @@
+55730 0.001 --- port gravityConstant
+1 50 2500 120 120 --- missile: radius mass thrust launchspeed lifetime
+0.5 50 5000 0.05 3600 150 --- player: radius drymass thrust ionThrustRatio isp maxFuel
+Star star 0 0 0 0 50 500000000000 -1 31 31 31 name posX posY velX velY radius mass lifetime colorR colorG colorB
+Star p1 0 0 0 0 10 3000000 -1 159 127 63
+Planet p2 0 0 0 0 20 12500000 -1 239 223 191
+orbitTEM star p1 42 0 1pi 0.4pi -1 --- mainBody orbitingBody orbitPeriod eccentricity meanAnomaly argumentOfPeriapsis orbitDirection
+orbitTEM star p2 84 0 0.4pi 0 -1
+Planet p3 0 0 0 0 25 12500000 -1 63 127 255
+Planet p4 0 0 0 0 5 400000 -1 127 111 95
+orbitTEM star p3 168 0.1 0 0.9pi -1.0
+orbitSEM p3 p4 50 0 0 0 -1.0
+Star p5 0 0 0 0 75 500000000 -1 239 191 159
+Planet p6 0 0 0 0 10 2000000 -1 127 127 127
+Planet p7 0 0 0 0 15 6000000 -1 127 127 127
+Star p8 0 0 0 0 2.5 100000d -1 127 127 127
+orbitTEM star p5 336 0 0 0 -1
+orbitTEM p5 p6 20 0 0 0 1
+orbitTEM p5 p7 40 0 0 0 1
+orbitSEM p7 p8 20 0 0 0 -1
+Star p9 600 0 0 0 25 100000000 -1 223 239 250
+orbitPAM star p9 600 17000 0.8pi -0.04pi 1
