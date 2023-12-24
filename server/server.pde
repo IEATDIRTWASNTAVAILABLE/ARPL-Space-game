@@ -37,7 +37,7 @@ void orbit(Body planet, Body moon, double dir) {
   double dy=planet.posY-moon.posY;
   double distSq=dx*dx+dy*dy;
   double dist=Math.sqrt(distSq);
-  double v=Math.sqrt(g*(planet.mass+moon.mass)/dist);
+  double v=Math.sqrt(g*planet.mass/dist);
   double vx=-v*dy/dist*dir;
   double vy=v*dx/dist*dir;
   moon.velX=planet.velX+vx;
@@ -45,7 +45,7 @@ void orbit(Body planet, Body moon, double dir) {
 }
 void orbitSEM(Body planet, Body moon, double sma, double ecc, double M, double argP, double dir) {
   double slr=sma*(1-ecc*ecc);
-  double gm=g*(planet.mass+moon.mass);
+  double gm=g*planet.mass;
   double r=slr/(1+ecc*Math.cos(M));
   double rx=r*Math.cos(M+argP);
   double ry=r*Math.sin(M+argP);
@@ -73,6 +73,12 @@ void orbitTEM(Body planet, Body moon, double period, double ecc, double M, doubl
 void writeChat(String msg) {
   chat.add(setLength(msg,128));
 }
+int hexColor(String str) {
+  int red=Integer.parseInt(str.substring(0,2),16);
+  int green=Integer.parseInt(str.substring(2,4),16);
+  int blue=Integer.parseInt(str.substring(4,6),16);
+  return color(red,green,blue);
+}
 double scale=1;
 void setup() {
   String[] config=loadStrings("config.txt");
@@ -81,6 +87,7 @@ void setup() {
   String[] configPlayer=config[2].split(" ");
   int port=Integer.parseInt(configServer[0]);
   g=Double.parseDouble(configServer[1]);
+  bulletSpeed=Double.parseDouble(configServer[2]);
   missileRadius=Double.parseDouble(configMissile[0]);
   missileMass=Double.parseDouble(configMissile[1]);
   missileThrust=Double.parseDouble(configMissile[2]);
@@ -101,7 +108,7 @@ void setup() {
     switch(op) {
       case "Star":
         bodyNames.add(str[1]);
-        val = new double[10];
+        val = new double[7];
         for(int j=0;j<val.length;j++) {
           String num=str[j+2];
           if(num.endsWith("pi")) {
@@ -110,11 +117,11 @@ void setup() {
             val[j]=Double.parseDouble(num);
           }
         }
-        addStar(val[0],val[1],val[2],val[3],val[4],val[5],val[6],color((int)val[7],(int)val[8],(int)val[9]));
+        addStar(val[0],val[1],val[2],val[3],val[4],val[5],val[6],hexColor(str[9]));
         break;
       case "Planet":
         bodyNames.add(str[1]);
-        val = new double[10];
+        val = new double[7];
         for(int j=0;j<val.length;j++) {
           String num=str[j+2];
           if(num.endsWith("pi")) {
@@ -123,7 +130,7 @@ void setup() {
             val[j]=Double.parseDouble(num);
           }
         }
-        addPlanet(val[0],val[1],val[2],val[3],val[4],val[5],val[6],color((int)val[7],(int)val[8],(int)val[9]));
+        addPlanet(val[0],val[1],val[2],val[3],val[4],val[5],val[6],hexColor(str[9]));
         break;
       case "orbitTEM":
         val = new double[5];
@@ -196,6 +203,14 @@ void setup() {
           }
         }
         orbit(bodies.get(bodyNames.indexOf(str[1])),bodies.get(bodyNames.indexOf(str[2])),val[0]);
+        break;
+      case "remove":
+        Body b=bodies.get(bodyNames.indexOf(str[1]));
+        bodies.remove(b);
+        planets.remove(b);
+        killers.remove(b);
+        spawns.remove(b);
+        bodyNames.remove(str[1]);
         break;
     }
   }
@@ -429,9 +444,9 @@ void draw() {
     int shipBytes=ships.size()*109;
     int chatBytes=chat.size()*128;
     int scoreBytes=players.size()*8;
-    int byteCount=37+planetBytes+shipBytes+chatBytes+scoreBytes;
+    int byteCount=45+planetBytes+shipBytes+chatBytes+scoreBytes;
     ByteBuffer simData=ByteBuffer.allocate(byteCount);
-    simData.put((byte)1).putInt(byteCount).putDouble(g).putDouble(dt).putInt(planetBytes);
+    simData.put((byte)1).putInt(byteCount).putDouble(g).putDouble(dt).putDouble(bulletSpeed).putInt(planetBytes);
     for(Body body : planets) {
       simData.putDouble(body.posX).putDouble(body.posY).putDouble(body.velX).putDouble(body.velY).putDouble(body.radius).putDouble(body.mass).putInt(body.clr).putInt(body.index);
     }

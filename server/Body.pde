@@ -55,24 +55,31 @@ class Body {
       double dy=(body.posY-posY);
       double distSq=dx*dx+dy*dy;
       double minDist=radius+body.radius;
-      if(distSq<=minDist*minDist&&distSq>0) {
+      if(distSq<minDist*minDist&&distSq>0) {
         double dist=Math.sqrt(distSq);
         double rvx=body.velX-velX;
         double rvy=body.velY-velY;
         double cv=rvx*dx/dist+rvy*dy/dist;
-        double force;
+        double force=0;
         if(cv<0) {
-          force=cv*body.mass*mass/(body.mass+mass)*1.5;
+          double totalMass=body.mass+mass;
+          force=cv*body.mass*mass/totalMass*1.5;
           velX+=force*dx/dist/mass;
           velY+=force*dy/dist/mass;
           body.velX+=-force*dx/dist/body.mass;
           body.velY+=-force*dy/dist/body.mass;
-        } else {
-          force=-1*body.mass*mass/(body.mass+mass);
-          velX+=force*dx/dist/mass;
-          velY+=force*dy/dist/mass;
-          body.velX+=-force*dx/dist/body.mass;
-          body.velY+=-force*dy/dist/body.mass;
+        //} else {
+          //force=-1*body.mass*mass/(body.mass+mass);
+          //velX+=force*dx/dist/mass;
+          //velY+=force*dy/dist/mass;
+          //body.velX+=-force*dx/dist/body.mass;
+          //body.velY+=-force*dy/dist/body.mass;
+          double offX=dx/dist*(dist-minDist)/totalMass;
+          double offY=dy/dist*(dist-minDist)/totalMass;
+          posX+=offX*body.mass;
+          posY+=offY*body.mass;
+          body.posX-=offX*mass;
+          body.posY-=offY*mass;
         }
         if(ships.contains(this)&&killers.contains(body)&&this.lifetime!=0) {
           Ship ship=ships.get(ships.indexOf(this));
