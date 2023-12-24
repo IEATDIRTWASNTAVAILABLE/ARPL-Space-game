@@ -11,7 +11,9 @@ boolean[] keys=new boolean[65536];
 boolean[] Skeys=new boolean[65536];
 double g=0.001;
 double dt=1/240.0;
+double bulletSpeed=480;
 int myID=-1;
+int predictionMode=0;
 Ship myPlayer;
 int selected=-1;
 int followID=-1;
@@ -100,6 +102,8 @@ void draw() {
     i+=8;
     dt=dataBuffer.getDouble(i);
     i+=8;
+    bulletSpeed=dataBuffer.getDouble(i);
+    i+=8;
     int planetBytes=dataBuffer.getInt(i);
     i+=4;
     int j=i;
@@ -143,7 +147,7 @@ void draw() {
   double totalMass=0;
   for(float i=0;i<1.0/max(frameRate,15);i+=dt) {
     for(Body body : bodies) {
-      body.updateVelocity(bodies);
+      body.updateVelocity(bodies,dt);
       centerPosX+=body.posX*body.mass;
       centerPosY+=body.posY*body.mass;
       centerVelX+=body.velX*body.mass;
@@ -154,14 +158,14 @@ void draw() {
       }
     }
     for(Body body : bodies) {
-      body.updatePosition();
+      body.updatePosition(dt);
       body.posX-=centerPosX/totalMass;
       body.posY-=centerPosY/totalMass;
       body.velX-=centerVelX/totalMass;
       body.velY-=centerVelY/totalMass;
     }
     for(Body body : bodies) {
-      body.updateCollisions();
+      body.updateCollisions(bodies);
     }
   }
   for(Ship player : players) {
@@ -302,7 +306,7 @@ void draw() {
       double argP=Math.atan2(Ey,-Ex);
       double dTheta=Math.PI/180d;
       double R=sma*(1-E*E)/(1+E);
-      if(E!=1&&planet.mass>=10) {
+      if(E!=1&&planet.mass>=10&&predictionMode==1) {
         stroke(red((color)planet.clr),green((color)planet.clr),blue((color)planet.clr),63);
         if(planet==myPlayer) {
           stroke(0,255,255,127);
@@ -322,7 +326,7 @@ void draw() {
             dotX=Rx;
             dotY=Ry;
           }
-        } else {
+        //} else {
           //double dotX=0;
           //double dotY=0;
           //boolean n=false;
@@ -384,12 +388,19 @@ void draw() {
       tY+=24;
       itext("fuel: ",myPlayer.fuel,"kg",tX,tY+=24);
       itext("thrust(booster): ",myPlayer.thrust/myPlayer.mass,"m/s^2",tX,tY+=24);
+      tY+=24;
+      if(predictionMode==1) {
+        text("Keplerian orbit mode",tX,tY+=24);
+      } else {
+        text("Predictive mode",tX,tY+=24);
+      }
       double apoX=Math.cos(argP)*sma*(1+E)+selectedBody.posX;
       double apoY=-Math.sin(argP)*sma*(1+E)+selectedBody.posY;
       double periX=-Math.cos(argP)*sma*(1-E)+selectedBody.posX;
       double periY=Math.sin(argP)*sma*(1-E)+selectedBody.posY;
       //line((float)((apoX-posX)*zoom)+width/2,(float)((apoY-posY)*zoom)+height/2,(float)((periX-posX)*zoom)+width/2,(float)((periY-posY)*zoom)+height/2);
-      if(E<1) {
+      
+      if(E<1&&predictionMode==1) {
         fill(255,255,255);
         circle((float)((selectedBody.posX-posX)*zoom)+width/2,(float)((selectedBody.posY-posY)*zoom)+height/2,2.5);
         fill(255,127,0);
@@ -397,7 +408,8 @@ void draw() {
         fill(0,255,127);
         circle((float)((apoX-posX)*zoom)+width/2,(float)((apoY-posY)*zoom)+height/2,2.5);
       }
-      double shootVel=480d;
+      
+      double shootVel=bulletSpeed;
       double t=dist/shootVel;
       double nrx=0;
       double nry=0;
@@ -427,6 +439,46 @@ void draw() {
       line(width/2,height/2,(float)(width/2-rx/dist*height/6),(float)(height/2-ry/dist*height/6));
       stroke(0,255,255);
       line(width/2,height/2,(float)(width/2+Math.cos(myPlayer.angle)*height/6),(float)(height/2+Math.sin(myPlayer.angle)*height/6));
+      }
+    }
+    if(predictionMode==0) {
+      double dtPrediction=dt*32;
+      double predictionTime=16;
+      ArrayList<Body> bodiesP = new ArrayList<Body>();
+      Body selectedBodyP=new Body(0,0,0,0,0,0,0,-1);
+      Body playerP=new Body(0,0,0,0,0,0,0,-1);
+      for(Body body : bodies) {
+        Body bodyP=body.copy();
+        bodiesP.add(bodyP);
+        if(bodyP.index==selected) {
+          selectedBodyP=bodyP;
+        }
+        if(players.contains(body)) {
+          if(bodyP.index==myID) {
+            playerP=bodyP;
+            playerP.clr=color(0,255,255);
+          } else {
+            bodyP.clr=color(255,0,0);
+          }
+        }
+      }
+      for(float i=0;i<predictionTime;i+=dtPrediction) {
+        for(Body body : bodiesP) {
+          body.updateVelocity(bodiesP,dtPrediction);
+        }
+        for(Body body : bodiesP) {
+          body.updatePosition(dtPrediction);
+        }
+        for(Body body : bodiesP) {
+          body.updateCollisions(bodiesP);
+          double rx=body.posX-selectedBodyP.posX+selectedBody.posX-posX;
+          double ry=body.posY-selectedBodyP.posY+selectedBody.posY-posY;
+          float x=(float)(rx*zoom)+width/2;
+          float y=(float)(ry*zoom)+height/2;
+          fill(red(body.clr),green(body.clr),blue(body.clr),(float)(0.5*(1-i/predictionTime))*alpha(body.clr));
+          noStroke();
+          circle(x,y,2.5);
+        }
       }
     }
     byte moveCode=byte(((int(keys['W'])*1+int(keys['A'])*2+int(keys['S'])*4+int(keys['D'])*8+int(keys['H'])*64+int(keys[SHIFT])*128)*int(!chatting)+int(mousePressed&&(mouseButton==LEFT))*16+int(mousePressed&&(mouseButton==RIGHT))*32));
@@ -505,6 +557,8 @@ void keyPressed() {
             followID=body.index;
           }
         }
+      } else if(keyCode=='V') {
+        predictionMode=(predictionMode+1)%2;
       } else if(keyCode==ENTER) {
         chatting=true;
       }
